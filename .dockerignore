@@ -56,7 +56,6 @@ tmp.*
 
 # Secrets and Configuration (DO NOT COMMIT!)
 .env
-config.*
 *.secret
 *.private
 *.key
