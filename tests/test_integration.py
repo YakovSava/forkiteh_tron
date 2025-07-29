@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine
+from sqlalchemy.pool import StaticPool
 
 from app.database import get_session
 from app.main import app
@@ -11,7 +12,14 @@ from app.main import app
 
 @pytest.fixture
 def session():
-    engine = create_engine("sqlite:///:memory:", echo=True)
+    engine = create_engine(
+        "sqlite:///:memory:",
+        echo=True,
+        connect_args={
+            "check_same_thread": False
+        },
+        poolclass=StaticPool
+    )
     SQLModel.metadata.create_all(engine)
 
     with Session(engine) as session:
@@ -21,7 +29,7 @@ def session():
 @pytest.fixture
 def client(session):
     def get_session_override():
-        return session
+        yield session
 
     app.dependency_overrides[get_session] = get_session_override
     client = TestClient(app)
@@ -31,16 +39,22 @@ def client(session):
 
 @pytest.mark.asyncio
 async def test_get_address_info_endpoint(client):
-    mock_tron_data = {"bandwidth": 1500, "energy": 2500, "trx_balance": 150.5}
+    mock_tron_data = {
+        'bandwidth': 1500,
+        'energy': 2500,
+        'trx_balance': Decimal('150.5')
+    }
 
-    with patch(
-        "app.api.endpoints.tron_service.get_address_info", new_callable=AsyncMock
-    ) as mock_service:
+    with patch('app.api.endpoints.tron_service.get_address_info',
+               new_callable=AsyncMock) as mock_service:
         mock_service.return_value = mock_tron_data
 
         test_address = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
 
-        response = client.post("/api/v1/address-info", json={"address": test_address})
+        response = client.post(
+            "/api/v1/address-info",
+            json={"address": test_address}
+        )
 
         assert response.status_code == 200
         data = response.json()
@@ -56,7 +70,10 @@ async def test_get_address_info_endpoint(client):
 
 
 def test_get_address_info_invalid_address(client):
-    response = client.post("/api/v1/address-info", json={"address": "invalid_address"})
+    response = client.post(
+        "/api/v1/address-info",
+        json={"address": "invalid_address"}
+    )
 
     assert response.status_code == 400
     assert "Invalid TRON address format" in response.json()["detail"]
@@ -70,7 +87,7 @@ def test_get_requests_endpoint(client, session):
             address=f"TTest{i:030d}",
             bandwidth=1000 + i,
             energy=2000 + i,
-            trx_balance=Decimal(f"{100 + i}.123456"),
+            trx_balance=Decimal(f"{100 + i}.123456")
         )
         for i in range(15)
     ]
@@ -103,7 +120,7 @@ def test_get_requests_pagination(client, session):
             address=f"TTest{i:030d}",
             bandwidth=1000,
             energy=2000,
-            trx_balance=Decimal("100.0"),
+            trx_balance=Decimal("100.0")
         )
         session.add(req)
     session.commit()
