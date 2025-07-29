@@ -1,9 +1,10 @@
+import pytest
+
 from decimal import Decimal
 from unittest.mock import AsyncMock, patch
 
-import pytest
-from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine
+from fastapi.testclient import TestClient
 from sqlalchemy.pool import StaticPool
 
 from app.database import get_session

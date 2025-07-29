@@ -1,7 +1,8 @@
+import pytest
+
 from datetime import datetime
 from decimal import Decimal
 
-import pytest
 from sqlmodel import Session, SQLModel, create_engine
 from sqlalchemy.pool import StaticPool
 

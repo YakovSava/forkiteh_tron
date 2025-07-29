@@ -1,7 +1,8 @@
-from sqlmodel import SQLModel, Field
-from datetime import datetime
 from typing import Optional
 from decimal import Decimal
+from datetime import datetime
+
+from sqlmodel import SQLModel, Field
 
 
 class TronAddressRequest(SQLModel, table=True):
